@@ -109,7 +109,7 @@ def decode_base64_to_image(base64_string: str) -> Image.Image:
 def _blocking_generate_story_part(prompt: str, image_input: Optional[Image.Image] = None) -> str:
     system_prompt = """
     你是一个富有想象力的互动故事讲述者。你的任务是根据用户的【选择】或【自定义的行动】，继续编织一个引人入胜的故事。
-    如果用户提供了一张图片，请你以图片中的主要物体（比如小动物、小玩具等）作为故事的主角。如果用户同时提供了主角名称，请将这个名称赋予图片中的主角。
+    如果用户提供了一张图片，请你以图片中的主要物体（比如人物的照片、小动物、小玩具等）作为故事的主角。如果用户同时提供了主角名称，请将这个名称赋予图片中的主角。
     你的讲述对象是4-9岁的儿童。你必须用给小朋友讲故事的语气来创作。
     你的故事必须通俗易懂，适合小朋友阅读，不要出现复杂难懂的语言。
     你的故事中不能出现暴力、恐怖、血腥等不适宜的内容。你的语言必须是中文。
@@ -236,14 +236,14 @@ async def start_story(request: StoryStartRequest):
         # [修改] 如果有图片，prompt 需要引导AI识别主角
         if request.character:
             initial_prompt_text = (
-                f"这是一张用户上传的图片，请以图片中的主要物体作为故事主角，并将主角命名为 '{request.character}'。"
+                f"这是一张用户上传的图片，请以图片中的主要物体或人物作为故事主角，并将主角命名为 '{request.character}'。"
                 f"在 '{request.setting}' 场景下，为这个主角创作一个引人入胜的儿童故事开篇。"
                 f"这个故事的总长度预计为【{request.total_steps}幕】。"
                 f"请确保开篇能够建立一个清晰的主线任务，并为后续发展留下悬念。"
             )
         else:
             initial_prompt_text = (
-                f"这是一张用户上传的图片，请以图片中的主要物体作为故事主角。"
+                f"这是一张用户上传的图片，请以图片中的主要物体或人物作为故事主角。"
                 f"在 '{request.setting}' 场景下，为这个主角创作一个引人入胜的儿童故事开篇。"
                 f"这个故事的总长度预计为【{request.total_steps}幕】。"
                 f"请确保开篇能够建立一个清晰的主线任务，并为后续发展留下悬念。"
