@@ -293,6 +293,7 @@ function App() {
                 🚀 每日奇遇 🚀
               </button>
             </div>
+            <p className="producer-credit-landing">制作人：禅川</p>
           </div>
         </div>
       ) : (
@@ -389,6 +390,9 @@ function App() {
           </main>
         </div>
       )}
+      <footer className="persistent-footer">
+        <p>制作人：禅川</p>
+      </footer>
     </div>
   );
 }
