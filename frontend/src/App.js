@@ -12,6 +12,8 @@ const STORY_LENGTHS = {
 };
 
 function App() {
+  const [hasStarted, setHasStarted] = useState(false);
+
   const [character, setCharacter] = useState('');
   const [setting, setSetting] = useState('');
   const [storyLength, setStoryLength] = useState('short');
@@ -30,6 +32,7 @@ function App() {
 
   // 重置所有状态到初始值的函式
   const resetStory = () => {
+    setHasStarted(false); // 返回到初始页面
     setStory(null);
     setStoryHistory([]);
     setCharacter('');
@@ -41,7 +44,6 @@ function App() {
     setError(null);
     setInputMode('text');
     setImagePreview('');
-    // 确保档案上传栏位也被清空
     const fileInput = document.getElementById('character-image-upload');
     if (fileInput) {
       fileInput.value = null;
@@ -187,80 +189,100 @@ function App() {
 
   return (
     <div className="App">
-      <header className="App-header">
-        <h1>织梦坊 - 用AI把童年织成童话</h1>
-        <div className="header-controls">
-          {totalSteps > 0 && <h2>第 {currentStep} / {totalSteps} 幕</h2>}
-          {story && !isStoryEnded && <button onClick={handleNewStoryClick} className="new-story-button">开启新故事</button>}
-        </div>
-      </header>
-
-      <main className="App-main">
-        {!story ? (
-          <form onSubmit={handleStartStory} className="start-form">
-            <div className="character-choice-tabs">
-                <button type="button" className={inputMode === 'text' ? 'active' : ''} onClick={() => setInputMode('text')}>文字输入主角</button>
-                <button type="button" className={inputMode === 'image' ? 'active' : ''} onClick={() => setInputMode('image')}>上传图片主角</button>
-            </div>
-            {inputMode === 'text' ? (
-                <input type="text" value={character} onChange={(e) => { setCharacter(e.target.value); if (imagePreview) setImagePreview(''); }} placeholder="故事的主角是..." />
-            ) : (
-                <div className="image-upload-wrapper">
-                    <div className="image-upload-container">
-                        {imagePreview ? (
-                            <div className="image-preview-wrapper">
-                                <img src={imagePreview} alt="主角预览" className="image-preview" />
-                                <button type="button" onClick={handleRemoveImage} className="remove-image-btn">×</button>
-                            </div>
-                        ) : (
-                            <label htmlFor="character-image-upload" className="image-upload-label">点击选择图片</label>
-                        )}
-                        <input id="character-image-upload" type="file" accept="image/png, image/jpeg, image/webp" onChange={handleImageChange} style={{ display: 'none' }} />
-                    </div>
-                    {imagePreview && (
-                        <input type="text" className="optional-name-input" value={character} onChange={(e) => setCharacter(e.target.value)} placeholder="给你的主角起个名字（选填）" />
-                    )}
-                </div>
-            )}
-            <input type="text" value={setting} onChange={(e) => setSetting(e.target.value)} placeholder="故事发生在哪里..." />
-            <div className="length-selector">
-                <label><input type="radio" value="short" checked={storyLength === 'short'} onChange={(e) => setStoryLength(e.target.value)} /> 短篇</label>
-                <label><input type="radio" value="medium" checked={storyLength === 'medium'} onChange={(e) => setStoryLength(e.target.value)} /> 中篇</label>
-                <label><input type="radio" value="long" checked={storyLength === 'long'} onChange={(e) => setStoryLength(e.target.value)} /> 长篇</label>
-            </div>
-            <button type="submit" disabled={isStartDisabled}>{isLoading ? '正在构思...' : '开始我们的故事'}</button>
-          </form>
-        ) : (
-          <div className="story-container">
-            {story.image_url && <img src={story.image_url} alt="故事场景" className="story-image" />}
-            <p className="story-text">{story.text}</p>
-
-            {isStoryEnded ? (
-              <div className="story-ending">
-                <p>~ 故事完结 ~</p>
-                <button onClick={resetStory} className="restart-button">
-                  开启新的冒险
-                </button>
-              </div>
-            ) : (
-              <div className="action-wrapper">
-                  <div className="choices-container">
-                      {story.choices.map((choice) => (
-                          <button key={choice.id} onClick={() => handleChoiceClick(choice.id)} disabled={isLoading} className="choice-button">{choice.text}</button>
-                      ))}
-                  </div>
-                  <div className="or-separator">或者...</div>
-                  <form onSubmit={handleUserActionSubmit} className="user-action-form">
-                      <input type="text" value={userAction} onChange={(e) => setUserAction(e.target.value)} placeholder="你想让主角做什么？" disabled={isLoading} className="user-action-input" />
-                      <button type="submit" disabled={isLoading} className="user-action-button">确定</button>
-                  </form>
-              </div>
-            )}
+      {!hasStarted ? (
+        // --- 这是新的初始页面视图 ---
+        <div className="landing-page">
+          <div className="storybook-cover">
+            <h1 className="welcome-title">欢迎来到织梦坊</h1>
+            <p className="welcome-text">
+              在这里，每一个天马行空的想法，每一张心爱的照片，都能绽放成一篇独一无二的童话故事。
+            </p>
+            <p className="welcome-text">
+              准备好了吗？让我们一起把想象力变成永恒的纪念。
+            </p>
+            <button onClick={() => setHasStarted(true)} className="start-experience-button">
+              ✨ 开始体验 ✨
+            </button>
           </div>
-        )}
-        {isLoading && <div className="loading">正在载入下一段奇遇...</div>}
-        {error && <div className="error">{error}</div>}
-      </main>
+        </div>
+      ) : (
+        // --- 这是您原来熟悉的核心应用视图 ---
+        <div className="story-creator-page">
+          <header className="App-header">
+            <h1>织梦坊 - 用AI把童言织成童话</h1>
+            <div className="header-controls">
+              {totalSteps > 0 && <h2>第 {currentStep} / {totalSteps} 幕</h2>}
+              {story && !isStoryEnded && <button onClick={handleNewStoryClick} className="new-story-button">开启新故事</button>}
+            </div>
+          </header>
+
+          <main className="App-main">
+            {!story ? (
+              <form onSubmit={handleStartStory} className="start-form">
+                <div className="character-choice-tabs">
+                    <button type="button" className={inputMode === 'text' ? 'active' : ''} onClick={() => setInputMode('text')}>文字输入主角</button>
+                    <button type="button" className={inputMode === 'image' ? 'active' : ''} onClick={() => setInputMode('image')}>上传图片主角</button>
+                </div>
+                {inputMode === 'text' ? (
+                    <input type="text" value={character} onChange={(e) => { setCharacter(e.target.value); if (imagePreview) setImagePreview(''); }} placeholder="故事的主角是..." />
+                ) : (
+                    <div className="image-upload-wrapper">
+                        <div className="image-upload-container">
+                            {imagePreview ? (
+                                <div className="image-preview-wrapper">
+                                    <img src={imagePreview} alt="主角预览" className="image-preview" />
+                                    <button type="button" onClick={handleRemoveImage} className="remove-image-btn">×</button>
+                                </div>
+                            ) : (
+                                <label htmlFor="character-image-upload" className="image-upload-label">点击选择图片</label>
+                            )}
+                            <input id="character-image-upload" type="file" accept="image/png, image/jpeg, image/webp" onChange={handleImageChange} style={{ display: 'none' }} />
+                        </div>
+                        {imagePreview && (
+                            <input type="text" className="optional-name-input" value={character} onChange={(e) => setCharacter(e.target.value)} placeholder="给你的主角起个名字（选填）" />
+                        )}
+                    </div>
+                )}
+                <input type="text" value={setting} onChange={(e) => setSetting(e.target.value)} placeholder="故事发生在哪里..." />
+                <div className="length-selector">
+                    <label><input type="radio" value="short" checked={storyLength === 'short'} onChange={(e) => setStoryLength(e.target.value)} /> 短篇</label>
+                    <label><input type="radio" value="medium" checked={storyLength === 'medium'} onChange={(e) => setStoryLength(e.target.value)} /> 中篇</label>
+                    <label><input type="radio" value="long" checked={storyLength === 'long'} onChange={(e) => setStoryLength(e.target.value)} /> 长篇</label>
+                </div>
+                <button type="submit" disabled={isStartDisabled}>{isLoading ? '正在构思...' : '开始我们的故事'}</button>
+              </form>
+            ) : (
+              <div className="story-container">
+                {story.image_url && <img src={story.image_url} alt="故事情景" className="story-image" />}
+                <p className="story-text">{story.text}</p>
+                {isStoryEnded ? (
+                  <div className="story-ending">
+                    <p>~ 故事完结 ~</p>
+                    <button onClick={resetStory} className="restart-button">
+                      开启新的冒险
+                    </button>
+                  </div>
+                ) : (
+                  <div className="action-wrapper">
+                      <div className="choices-container">
+                          {story.choices.map((choice) => (
+                              <button key={choice.id} onClick={() => handleChoiceClick(choice.id)} disabled={isLoading} className="choice-button">{choice.text}</button>
+                          ))}
+                      </div>
+                      <div className="or-separator">或者...</div>
+                      <form onSubmit={handleUserActionSubmit} className="user-action-form">
+                          <input type="text" value={userAction} onChange={(e) => setUserAction(e.target.value)} placeholder="你想让主角做什么？" disabled={isLoading} className="user-action-input" />
+                          <button type="submit" disabled={isLoading} className="user-action-button">确定</button>
+                      </form>
+                  </div>
+                )}
+              </div>
+            )}
+            {isLoading && <div className="loading">正在加载下一段奇遇...</div>}
+            {error && <div className="error">{error}</div>}
+          </main>
+        </div>
+      )}
     </div>
   );
 }
