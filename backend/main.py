@@ -67,11 +67,17 @@ class StoryChoice(BaseModel):
     id: str
     text: str
 
+class ImageGenerationRequest(BaseModel):
+    image_prompt: str
+    previous_image_url: Optional[str] = None
+    initial_image_data_url: Optional[str] = None # 用于故事开始的第一张图
+
 class StoryResponse(BaseModel):
     text: str
-    image_url: Optional[str] = None
     choices: List[StoryChoice]
     main_quest: str
+    image_prompt: str # [修改]
+    image_url: Optional[str] = None
 
 class NextStepRequest(BaseModel):
     choice_id: Optional[str] = None
@@ -109,7 +115,7 @@ def decode_base64_to_image(base64_string: str) -> Image.Image:
 def _blocking_generate_story_part(prompt: str, image_input: Optional[Image.Image] = None) -> str:
     system_prompt = """
     你是一个富有想象力的互动故事讲述者。你的任务是根据用户的【选择】或【自定义的行动】，继续编织一个引人入胜的故事。
-    如果用户提供了一张图片，请你以图片中的主要物体（比如人物的照片、小动物、小玩具等）作为故事的主角。如果用户同时提供了主角名称，请将这个名称赋予图片中的主角。
+    如果用户提供了一张图片，请你以图片中的主要物体（比如某个人的照片、小动物、小玩具等）作为故事的主角。如果用户同时提供了主角名称，请将这个名称赋予图片中的主角。
     你的讲述对象是4-9岁的儿童。你必须用给小朋友讲故事的语气来创作。
     你的故事必须通俗易懂，适合小朋友阅读，不要出现复杂难懂的语言。
     你的故事中不能出现暴力、恐怖、血腥等不适宜的内容。你的语言必须是中文。
@@ -268,9 +274,9 @@ async def start_story(request: StoryStartRequest):
     
     return StoryResponse(
         text=ai_data["text"],
-        image_url=generated_image_url,
         choices=[StoryChoice(**choice) for choice in ai_data["choices"]],
-        main_quest=ai_data["main_quest"]
+        main_quest=ai_data["main_quest"],
+        image_prompt=ai_data["image_prompt"]
     )
 
 @app.post("/next_step", response_model=StoryResponse)
@@ -338,7 +344,27 @@ async def next_step(request: NextStepRequest):
 
     return StoryResponse(
         text=ai_data["text"],
-        image_url=generated_image_url,
         choices=[StoryChoice(**choice) for choice in ai_data["choices"]],
-        main_quest=main_quest_line
+        main_quest=request.story_history[0].main_quest,
+        image_prompt=ai_data["image_prompt"]
     )
+
+@app.post("/generate_image")
+async def generate_image_endpoint(request: ImageGenerationRequest):
+    initial_image = None
+    if request.initial_image_data_url:
+        initial_image = decode_base64_to_image(request.initial_image_data_url)
+        
+    final_image_prompt = f"{IMAGE_CONSISTENCY_RULE} {request.image_prompt}"
+    print(f"\n[收到图片生成请求]: {final_image_prompt}\n")
+    
+    try:
+        image_url = await generate_consistent_image(
+            prompt=final_image_prompt,
+            previous_image_url=request.previous_image_url,
+            initial_image=initial_image
+        )
+        return {"image_url": image_url}
+    except Exception as e:
+        print(f"独立的图片生成接口出错: {e}")
+        raise HTTPException(status_code=500, detail="图片生成失败")
